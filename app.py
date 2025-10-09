@@ -61,7 +61,7 @@ vectorizer, tfidf_matrix, faq_df = load_models()
 # ------------------------
 # Page layout & styles
 # ------------------------
-st.set_page_config(page_title="SHA Chatbot", page_icon="assets/sha_logo.png" if os.path.exists(os.path.join(ASSETS_DIR,"sha_logo.png")) else "💬", layout="centered")
+st.set_page_config(page_title="SHA Chatbot", page_icon="assets/shalogo.png" if os.path.exists(os.path.join(ASSETS_DIR,"shalogo.png")) else "💬", layout="centered")
 st.markdown("""
     <style>
     .chat-container { max-height: 520px; overflow-y: auto; padding: 12px; border-radius: 10px; margin-bottom: 12px; }

@@ -1,142 +1,123 @@
 import streamlit as st
 import pandas as pd
-import pickle
-import numpy as np
-import re
-import os
-import time
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+import os
+from datetime import datetime
 
-# ------------------------
-# File Paths
-# ------------------------
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-ASSETS_DIR = os.path.join(BASE_DIR, "assets")
-MODELS_DIR = os.path.join(BASE_DIR, "models")
-
-# ------------------------
-# Text Preprocessing
-# ------------------------
-def preprocess(text):
-    text = text.lower()
-    text = re.sub(r'[^a-z0-9\s]', '', text)
-    text = re.sub(r'\s+', ' ', text).strip()
-    return text
-
-# ------------------------
-# Load Models and Data
-# ------------------------
-@st.cache_resource
-def load_models():
-    faq_df = pd.read_csv(os.path.join(MODELS_DIR, "faq_data_clean.csv"))
-    vectorizer = pickle.load(open(os.path.join(MODELS_DIR, "vectorizer.pkl"), "rb"))
-    tfidf_matrix = pickle.load(open(os.path.join(MODELS_DIR, "tfidf_matrix.pkl"), "rb"))
-    return faq_df, vectorizer, tfidf_matrix
-
-faq_df, vectorizer, tfidf_matrix = load_models()
-
-# ------------------------
-# Streamlit Config
-# ------------------------
+# --------------------------------
+# 🏁 Streamlit App Configuration
+# --------------------------------
 st.set_page_config(page_title="SHA Chatbot", page_icon="💬", layout="centered")
 
-# ------------------------
-# Sidebar (Theme + Logo)
-# ------------------------
+# --------------------------------
+# 🧾 Create FAQ data manually (no external CSV needed)
+# --------------------------------
+faq_data = [
+    {"question": "What is the Social Health Authority?",
+     "answer": "The Social Health Authority (SHA) is a government organization responsible for managing universal health coverage in Kenya."},
+    {"question": "How can I register for the Social Health Authority?",
+     "answer": "You can register online through the SHA portal or visit the nearest SHA office with your identification documents."},
+    {"question": "Who is eligible to register for the Social Health Authority?",
+     "answer": "All Kenyan citizens and legal residents are eligible to register for the Social Health Authority."},
+    {"question": "What identification documents are required for registration?",
+     "answer": "You will need your National ID for adults or a birth certificate for children to register for SHA."},
+    {"question": "Can children be registered for the Social Health Authority?",
+     "answer": "Yes, children can be registered under their parents' or guardians' SHA accounts."},
+    {"question": "What are the benefits covered under the Social Health Authority?",
+     "answer": "SHA covers outpatient, inpatient, maternity, emergency, and chronic disease management services."},
+    {"question": "How are contributions to the Social Health Authority made?",
+     "answer": "Members can make monthly contributions via M-Pesa Paybill or automatic payroll deductions."},
+    {"question": "Are employers required to contribute to the Social Health Authority for their employees?",
+     "answer": "Yes, employers are legally required to contribute to SHA on behalf of their employees."},
+    {"question": "What healthcare services are purchased by the Social Health Authority?",
+     "answer": "SHA purchases preventive, promotive, curative, rehabilitative, and palliative care services."},
+    {"question": "How can beneficiaries access healthcare services under the fund?",
+     "answer": "Beneficiaries can access care from empaneled and contracted healthcare providers using their SHA ID or biometric verification."},
+    {"question": "Who qualifies as a dependent under the Social Health Authority?",
+     "answer": "Dependents include spouses, children under 18, or up to 25 if in school, and disabled dependents regardless of age."},
+    {"question": "Can indigent and vulnerable persons receive coverage under the Social Health Authority?",
+     "answer": "Yes, indigent and vulnerable persons are covered through government-funded subsidies."},
+    {"question": "What is the role of empaneled and contracted healthcare providers?",
+     "answer": "They provide healthcare services to SHA members and ensure quality standards are maintained."},
+    {"question": "How does the Social Health Authority ensure the quality of healthcare services?",
+     "answer": "SHA regularly audits facilities, monitors outcomes, and ensures adherence to healthcare standards."},
+    {"question": "What are the obligations of households in relation to the Social Health Authority?",
+     "answer": "Households must register, keep information updated, and make timely contributions."},
+    {"question": "Are there any specific benefits for chronic and critical illnesses?",
+     "answer": "Yes, SHA provides special coverage for chronic and critical illnesses under specialized care packages."},
+    {"question": "How can I list beneficiaries under my Social Health Authority coverage?",
+     "answer": "You can add beneficiaries through the SHA online portal or by visiting an SHA office."},
+    {"question": "What happens if a member fails to make contributions to the fund?",
+     "answer": "Failure to pay contributions may lead to suspension of benefits until arrears are cleared."}
+]
+
+faq_df = pd.DataFrame(faq_data)
+
+# --------------------------------
+# ⚙️ Preprocess and Vectorize FAQs
+# --------------------------------
+vectorizer = TfidfVectorizer(stop_words="english")
+tfidf_matrix = vectorizer.fit_transform(faq_df["question"])
+
+# --------------------------------
+# 💬 Chatbot Response Function
+# --------------------------------
+def chatbot_response(user_input):
+    user_tfidf = vectorizer.transform([user_input])
+    similarities = cosine_similarity(user_tfidf, tfidf_matrix)
+    index = similarities.argmax()
+    score = similarities[0, index]
+
+    if score < 0.3:
+        return "I'm sorry, I couldn’t find a relevant answer. Please contact SHA support for more assistance."
+    else:
+        return faq_df.iloc[index]["answer"]
+
+# --------------------------------
+# 🗃️ Log Interaction Function
+# --------------------------------
+def log_chat(user_input, bot_response):
+    log_entry = pd.DataFrame([{
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "user_query": user_input,
+        "bot_response": bot_response
+    }])
+    if os.path.exists("chat_logs.csv"):
+        log_entry.to_csv("chat_logs.csv", mode="a", index=False, header=False)
+    else:
+        log_entry.to_csv("chat_logs.csv", mode="w", index=False, header=True)
+
+# --------------------------------
+# 🎨 Streamlit UI
+# --------------------------------
+st.title("💬 Social Health Authority Chatbot")
+st.markdown("This chatbot provides quick answers to **frequently asked questions about the Social Health Authority (SHA)** in Kenya.")
+
+# Sidebar with logo
+ASSETS_DIR = "assets"
 logo_path = os.path.join(ASSETS_DIR, "sha_logo.png")
 
 if os.path.exists(logo_path):
     st.sidebar.image(logo_path, width=150)
 else:
-    st.sidebar.warning("⚠️ Logo not found. Please add 'sha_logo.png' in the assets folder.")
+    st.sidebar.markdown("### 🏥 SHA Chatbot")
 
-st.sidebar.title("⚙️ Settings")
-theme = st.sidebar.radio("Choose Theme", ["Light", "Dark"])
 st.sidebar.markdown("---")
-st.sidebar.markdown("**About:** This chatbot answers FAQs about the **Social Health Authority (SHA)** in Kenya.")
+st.sidebar.info("Ask me about SHA registration, eligibility, benefits, or contributions.")
 
-# ------------------------
-# Custom CSS (GPT-like)
-# ------------------------
-bg_color = "#f7f7f8" if theme == "Light" else "#1e1e1e"
-user_color = "#0056b3" if theme == "Light" else "#007bff"
-bot_color = "#e5e5ea" if theme == "Light" else "#2c2c2c"
-text_color = "black" if theme == "Light" else "white"
+# Chat interface
+st.markdown("### 🧠 Ask Your Question")
+user_query = st.text_input("Type your question below:")
 
-st.markdown(f"""
-    <style>
-    body {{
-        background-color: {bg_color};
-        color: {text_color};
-    }}
-    .chat-container {{
-        max-height: 500px;
-        overflow-y: auto;
-        padding: 20px;
-        border-radius: 12px;
-        background-color: {bg_color};
-        width: 90%;
-        margin: auto;
-    }}
-    .user-bubble {{
-        background-color: {user_color};
-        color: white;
-        border-radius: 15px 15px 0 15px;
-        padding: 10px 15px;
-        margin: 10px 0;
-        text-align: right;
-    }}
-    .bot-bubble {{
-        background-color: {bot_color};
-        color: {text_color};
-        border-radius: 15px 15px 15px 0;
-        padding: 10px 15px;
-        margin: 10px 0;
-        text-align: left;
-    }}
-    </style>
-""", unsafe_allow_html=True)
-
-# ------------------------
-# Header Section
-# ------------------------
-if os.path.exists(logo_path):
-    st.image(logo_path, width=100)
-st.markdown(f"<h2 style='text-align:center; color:{text_color}'>💬 SHA Chatbot</h2>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; color:{text_color}'>Your intelligent assistant for Social Health Authority FAQs.</p>", unsafe_allow_html=True)
-
-# ------------------------
-# Chat Logic
-# ------------------------
-if "history" not in st.session_state:
-    st.session_state.history = []
-
-user_input = st.chat_input("Ask me anything about SHA...")
-
-if user_input:
-    clean_query = preprocess(user_input)
-    query_vec = vectorizer.transform([clean_query])
-    similarity = cosine_similarity(query_vec, tfidf_matrix)
-    best_idx = np.argmax(similarity)
-    best_score = similarity[0, best_idx]
-
-    if best_score < 0.3:
-        bot_response = "I'm sorry, I don't have that answer yet. Please contact SHA support for more details."
+if st.button("Get Answer"):
+    if user_query.strip():
+        response = chatbot_response(user_query)
+        st.success(response)
+        log_chat(user_query, response)  # Log conversation
     else:
-        bot_response = faq_df.iloc[best_idx]['response']
+        st.warning("Please enter a question before submitting.")
 
-    st.session_state.history.append(("user", user_input))
-    st.session_state.history.append(("bot", bot_response))
-
-# ------------------------
-# Display Chat
-# ------------------------
-st.markdown('<div class="chat-container">', unsafe_allow_html=True)
-for sender, message in st.session_state.history:
-    if sender == "user":
-        st.markdown(f"<div class='user-bubble'>🧑‍💻 {message}</div>", unsafe_allow_html=True)
-    else:
-        with st.spinner("Typing..."):
-            time.sleep(0.7)
-        st.markdown(f"<div class='bot-bubble'>🤖 {message}</div>", unsafe_allow_html=True)
-st.markdown("</div>", unsafe_allow_html=True)
+# Footer
+st.markdown("---")
+st.caption("Built with ❤️ using Streamlit, Scikit-learn, and TF-IDF similarity.")

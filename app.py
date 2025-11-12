@@ -142,7 +142,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Sidebar
-st.sidebar.image("assets/sha_logo.png", width=150)
+st.sidebar.image("assets/shalogo.png", width=150)
 st.sidebar.markdown("### 🏥 About SHA Chatbot")
 st.sidebar.info("Ask about registration, eligibility, benefits, contributions, or healthcare services.")
 

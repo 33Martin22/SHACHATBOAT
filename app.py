@@ -114,7 +114,7 @@ def chatbot_response(user_input):
     index = similarities.argmax()
     score = similarities[0, index]
     if score < 0.3:
-        return "🤔 I'm not sure about that. Please contact SHA support for more help or visit the official SHA website for verified details."
+        return "🤔 I'm not sure about that,For more information  please contact SHA support at 0713889663  or for more help or visit the official SHA website for verified details."
     else:
         return faq_df.iloc[index]["answer"]
 
@@ -179,6 +179,4 @@ if user_query:
     st.session_state.chat_history.append({"user": user_query, "bot": response})
     log_chat(user_query, response)
 
-# Footer
-st.markdown("<hr>", unsafe_allow_html=True)
-st.caption("Built with ❤️ using Streamlit, Scikit-learn, and TF-IDF similarity.")
+

@@ -15,7 +15,9 @@ st.set_page_config(page_title="SHA Chatbot", page_icon="💬", layout="centered"
 # --------------------------------
 # 🔑 Configure Gemini API
 # --------------------------------
-GEMINI_API_KEY = st.secrets["AIzaSyBy2ToDOl5BAfyRLLQNVXQvbSf0SY-mSEw"]
+GEMINI_API_KEY = "AIzaSyBy2ToDOl5BAfyRLLQNVXQvbSf0SY-mSEw"
+GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+
 genai.configure(api_key=GEMINI_API_KEY)
 gemini_model = genai.GenerativeModel("gemini-pro")
 

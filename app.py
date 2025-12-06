@@ -19,7 +19,7 @@ GEMINI_API_KEY = "AIzaSyBy2ToDOl5BAfyRLLQNVXQvbSf0SY-mSEw"
 GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
 
 genai.configure(api_key=GEMINI_API_KEY)
-gemini_model = genai.GenerativeModel("gemini-3-pro-preview")
+gemini_model = genai.GenerativeModel("gemini-1.5-flash")
 
 # --------------------------------
 # 🧾 FAQ Dataset
